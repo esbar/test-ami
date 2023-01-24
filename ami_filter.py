@@ -12,7 +12,7 @@ session = boto3.Session(
 )
 
 
-ec2_client = session.client("ec2")
+ec2_client = session.client("ec2", region_name='us-west-2')
 
 response = ec2_client.describe_images(
     Filters=[{"Name": "name", "Values": ["concourse-*"]}]
