@@ -8,6 +8,9 @@ terraform {
 
   required_version = ">= 1.2.0"
 }
+variable "image_id" {
+  type = string
+}
 provider "aws" {
   region = "us-west-2"
 }

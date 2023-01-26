@@ -2,3 +2,5 @@
 concourse/credentials.yml
 Pipfile.lock
 packer/packer-manifest.json
+terraform/.terraform
+terraform/.terraform.lock.hcl
