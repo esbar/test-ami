@@ -57,9 +57,11 @@ jobs:
         - -cx
         - |
           cat ./result-script/file
-          export AMI_ID=$(cat ./result-script/file )
-          echo "Creating Terraform Image with AMI $AMI_ID"
+          export TF_VAR_image_id=$(cat ./result-script/file )
+          echo "Creating Terraform Image with AMI $TF_VAR_image_id"
           echo "soy el output" > ./test-output/file
           cat ./test-output/file
           cd terraform-source/terraform
           ls
+          terraform init
+          terraform plan
