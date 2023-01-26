@@ -1,0 +1,27 @@
+---
+platform: linux        
+run:
+  path: /bin/bash
+            #user: root
+  args:
+    - -ce
+    - |
+      cd terraform/cicd
+      mkdir -p _build
+      mkdir /root/.ssh
+      echo "${GIT_SSH_KEY}" > "/root/.ssh/id_ecdsa"
+      echo "${GITHUB_HOST_KEY}" > "/root/.ssh/known_hosts"
+      chmod 700 "/root/.ssh"
+      chmod 600 "/root/.ssh/id_ecdsa"
+      chmod 644 "/root/.ssh/known_hosts"
+      sl login
+      sl terraform install
+      sl aws session generate --account-id=${AWS_ACCOUNT_ID} --role-name=owner --profile=cicd
+      export AWS_PROFILE=cicd
+      if [ -z "${PLANFILE}" ]; then
+      echo "PLANFILE must be provided."
+      exit 1
+      fi
+      cp ../../../plan/${PLANFILE} ${PLANFILE}
+      ./init.sh
+      /usr/local/bin/terraform apply -auto-approve ${PLANFILE}

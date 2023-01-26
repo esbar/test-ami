@@ -1,0 +1,49 @@
+---
+resources:
+- name: terraform-source
+  icon: github 
+  type: git
+  source:
+    uri: https://github.com/esbar/test-ami.git
+    branch: main
+
+jobs:
+- name: filter-ami
+  plan:
+  - get: terraform-source
+  - task: run-script
+    config:
+      platform: linux
+      inputs:
+      - name: terraform-source
+      run:
+        path: python
+        args:
+        - terraform-source/ami_filter.py
+      params:
+            AWS_ACCESS: ((aws_access))
+            AWS_SECRET: ((aws_secret))
+    
+            
+    output_mapping:
+      ami-id: filter-ami/ami-id.txt
+
+
+- name: build-image
+  plan:
+  - get: terraform-source
+  - get: filter-ami
+    trigger: true
+  - task: build-image
+    config:
+      platform: linux
+      inputs:
+      - name: terraform-source
+      - name: filter-ami
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          export AMI_ID=$(cat filter-ami/filter-ami/ami-id.txt)
+          echo "Creating Terraform Image with AMI $AMI_ID"

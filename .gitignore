@@ -1,1 +1,4 @@
 .vscode
+concourse/credentials.yml
+Pipfile.lock
+packer/packer-manifest.json

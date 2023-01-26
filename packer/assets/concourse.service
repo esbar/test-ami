@@ -1,0 +1,11 @@
+[Unit]
+Description=Concourse CI
+
+[Service]
+User=concourse
+Group=concourse
+ExecStart=/usr/local/concourse/concourse web
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,28 @@
+---
+resources:
+  - icon: docker
+    name: sl-terraform
+    source:
+      #password: ((sl_docker_password))
+      #password: ebj940523
+      repository: hashicorp/terraform
+      #username: ((sl_docker_username))
+      #username: lordarshen
+    type: registry-image
+  - name: cicd_core
+    type: git
+    icon: source-merge
+    source:
+      #to change
+      uri: https://github.office.opendns.com/lavalooq/netc-5300.git
+      branch: check-terraform
+      private_key: ((token_github))
+jobs:
+  - name: terraform
+
+    plan:
+      - get: sl-terraform
+        trigger: true
+      - task: terraform-plan
+        file: netc-5300/terraform-task.yml
+        image: sl-terraform   

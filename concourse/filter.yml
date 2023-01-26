@@ -1,0 +1,65 @@
+---
+resources:
+- name: terraform-source
+  icon: github 
+  type: git
+  source:
+    uri: https://github.com/esbar/test-ami.git
+    branch: main
+
+jobs:
+- name: test-ft-concourse
+  plan:
+  - get: terraform-source
+  - task: run-script
+    output_mapping:
+      ami-id: result-script
+    config:
+      platform: linux
+      image_resource:
+            type: registry-image
+            source: 
+              repository: lordarshen/filter-ami
+              username: ((docker_hub_user))
+              password: ((docker_hub_password))
+      inputs:
+        - name: terraform-source
+      outputs:
+        - name: ami-id
+      run:
+        path: sh
+        args:
+        - -exc
+        - |
+          python3 /script/ami_filter.py > ./ami-id/file
+          cat ./ami-id/file
+      params:
+          AWS_ACCESS: ((aws_access))
+          AWS_SECRET: ((aws_secret))
+
+  - task: testing-terraform
+    output_mapping:
+      test-output: testing
+    config:
+      platform: linux
+      image_resource:
+            type: registry-image
+            source: 
+              repository: hashicorp/terraform
+      inputs:
+        - name: result-script
+        - name: terraform-source
+      outputs:
+        - name: test-output
+      run:
+        path: sh
+        args:
+        - -cx
+        - |
+          cat ./result-script/file
+          export AMI_ID=$(cat ./result-script/file )
+          echo "Creating Terraform Image with AMI $AMI_ID"
+          echo "soy el output" > ./test-output/file
+          cat ./test-output/file
+          cd terraform-source/terraform
+          ls
