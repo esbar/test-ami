@@ -1,0 +1,137 @@
+---
+resources:
+
+- name: terraform-source
+  icon: github 
+  type: git
+  source:
+    uri: https://github.com/esbar/test-ami.git
+    branch: main
+
+- icon: docker
+  name: hc-terraform
+  source:
+    repository: hashicorp/terraform
+  type: registry-image
+
+# - icon: docker
+#   name: filter-ami
+#   source:
+#     repository: lordarshen/filter-ami
+#     username: ((docker_hub_user))
+#     password: ((docker_hub_password))
+#   type: registry-image
+
+
+- name: hello-world-image
+  type: registry-image
+  source:
+    repository: hello-world
+    tag: latest
+
+- name: dnd-image
+  type: registry-image
+  source:
+    repository: docker
+    tag: latest
+
+
+jobs:
+# - name: test-ft-resource
+#   plan:
+#   - get: filter-ami
+#     trigger: true
+#   - task: run-script
+#     output_mapping:
+#       ami-id: result-script
+#     config:
+#       platform: linux
+#       image: 
+#         - filter-ami     
+#       outputs:
+#         - name: ami-id
+#       run:
+#         path: sh
+#         args:
+#         - -exc
+#         - |
+#           python3 /script/ami_filter.py > ./ami-id/file
+#           cat ./ami-id/file
+#       params:
+#           AWS_ACCESS: ((aws_access))
+#           AWS_SECRET: ((aws_secret))
+- name: check-repository
+  plan: 
+  - get: terraform-source
+    trigger: true
+  - task: list-files
+    config:
+      inputs:
+        - name: terraform-source
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: { repository: busybox }
+      run:
+        path: ls
+        args: ["-la", "./terraform-source"]
+
+- name: test-ft-terraform
+  
+  plan:
+  - in_parallel:
+    - get: hc-terraform
+      trigger: true
+    - get: terraform-source
+      trigger: true
+  - task: testing-terraform
+    output_mapping:
+      test-output: testing
+    config:
+      platform: linux
+      image_resource: 
+        type: registry-image
+        source:
+          repository: hashicorp/terraform
+      inputs:
+        #- name: result-script
+        - name: terraform-source
+      outputs:
+        - name: test-output
+      run:
+        path: sh
+        args:
+        - -cx
+        - |
+          cd terraform-source/terraform
+          terraform --version
+          
+      params:
+          AWS_ACCESS: ((aws_access))
+          AWS_SECRET: ((aws_secret))
+
+- name: check-dnd
+  plan:
+  - in_parallel:
+    - get: hello-world-image
+      trigger: true
+    - get: dnd-image
+      trigger: true
+    - get: terraform-source
+  - task: hello-world-dnd
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: 
+          repository: karlkfi/concourse-dcind
+      inputs: 
+        - name: terraform-source
+      run:
+        path: sh
+        args:
+        - -cx
+        - |
+          docker --version
+          
